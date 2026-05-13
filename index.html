@@ -1,0 +1,547 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>BreastGPT · A Multimodal LLM for the Full Spectrum of Breast Cancer Clinical Routine</title>
+<meta name="description" content="BreastGPT, presented as a unified clinical agent: a screening agent, diagnosis agent, and treatment-planning agent share one MLLM backbone across five breast imaging modalities." />
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='16' fill='%23fff0f3'/%3E%3Cpath d='M20 18c8 7 16 21 24 28M44 18c-8 7-16 21-24 28' stroke='%23b91c5c' stroke-width='7' stroke-linecap='round' fill='none'/%3E%3Ccircle cx='32' cy='32' r='5' fill='%23d98a16'/%3E%3C/svg%3E" />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+
+<!-- ============================== NAV ============================== -->
+<nav class="nav">
+  <div class="nav-inner">
+    <a href="#top" class="brand">
+      <span class="brand-mark">🎀</span>
+      <span class="brand-name">BreastGPT</span>
+    </a>
+    <div class="nav-links">
+      <a href="#abstract">Overview</a>
+      <a href="#agents">Agent System</a>
+      <a href="#dataset">BreastStage</a>
+      <a href="#method">Agent Internals</a>
+      <a href="#results">Results</a>
+      <a href="#gallery">Case Studies</a>
+      <a href="#bibtex">BibTeX</a>
+    </div>
+  </div>
+</nav>
+
+<!-- ============================== HERO ============================== -->
+<header class="hero" id="top">
+  <div class="hero-bg"></div>
+  <div class="hero-inner">
+    <div class="hero-pill">Manuscript in Preparation · Target: NeurIPS 2026</div>
+    <h1 class="hero-title">
+      <span class="grad">BreastGPT</span>
+      <span class="hero-sub">A Multimodal Large Language Model <br/>for the Full Spectrum of Breast Cancer Clinical Routine</span>
+    </h1>
+    <p class="hero-tagline">One backbone, three stage-specialist agents — <b>Screening</b>, <b>Diagnosis</b>, and <b>Treatment-Planning</b> — orchestrated end-to-end along the breast cancer care continuum.</p>
+
+    <div class="hero-pipeline" aria-label="Breast cancer clinical workflow">
+      <span>Screening</span>
+      <i></i>
+      <span>Diagnosis</span>
+      <i></i>
+      <span>Treatment Planning</span>
+    </div>
+
+    <div class="authors">
+      <span class="author">Anonymous Author(s)</span>
+    </div>
+    <div class="affil">Targeting the 40<sup>th</sup> Conference on Neural Information Processing Systems (NeurIPS 2026); not yet accepted.</div>
+
+    <div class="cta-row">
+      <a class="cta cta-primary" href="my-paper/neurips_2026.pdf" target="_blank">
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg>
+        Paper
+      </a>
+      <a class="cta" href="https://anonymous.4open.science/r/BreastGPT" target="_blank">
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"/></svg>
+        Code
+      </a>
+      <a class="cta" href="https://anonymous.4open.science/r/BreastGPT" target="_blank">
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5v14a9 3 0 0 0 18 0V5"/><path d="M3 12a9 3 0 0 0 18 0"/></svg>
+        Dataset
+      </a>
+      <a class="cta" href="https://anonymous.4open.science/r/BreastGPT" target="_blank">
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 9h6v6H9z"/></svg>
+        Model
+      </a>
+    </div>
+
+    <figure class="hero-figure">
+      <img src="assets/fig1.png" alt="BreastStage overview" />
+      <figcaption>The <b>BreastStage</b> corpus aligned with the end-to-end breast cancer clinical workflow: <i>screening → diagnosis → treatment planning</i> across five imaging modalities.</figcaption>
+    </figure>
+  </div>
+</header>
+
+<!-- ============================== STATS ============================== -->
+<section class="stats">
+  <div class="stat">
+    <div class="stat-num">1.86<span>M</span></div>
+    <div class="stat-label">Instruction-Following Pairs</div>
+  </div>
+  <div class="stat">
+    <div class="stat-num">17</div>
+    <div class="stat-label">Sub-Datasets Curated</div>
+  </div>
+  <div class="stat">
+    <div class="stat-num">5</div>
+    <div class="stat-label">Imaging Modalities</div>
+  </div>
+  <div class="stat">
+    <div class="stat-num">136</div>
+    <div class="stat-label">Task Templates</div>
+  </div>
+  <div class="stat highlight">
+    <div class="stat-num">89.92<span>%</span></div>
+    <div class="stat-label">Open-Ended Score</div>
+  </div>
+</section>
+
+<!-- ============================== ABSTRACT ============================== -->
+<section class="section" id="abstract">
+  <div class="section-head">
+    <span class="section-tag">01 · The Agent</span>
+    <h2 class="no-wrap-title">A clinical agent that thinks in stages.</h2>
+  </div>
+
+  <!-- Animated workflow diagram -->
+  <div class="flow-anim agent-console" aria-label="BreastGPT full-workflow agent animation">
+    <div class="console-glow"></div>
+    <div class="console-topline">
+      <span class="live-dot"></span>
+      <span>Stage-aware clinical agent loop</span>
+      <span class="console-chip">one MLLM checkpoint</span>
+    </div>
+
+    <div class="agent-stage">
+      <div class="patient-record">
+        <div class="record-title">Patient Case · multimodal inputs</div>
+        <div class="scan-stack">
+          <figure class="scan-tile ct">
+            <video src="assets/case-study/ct.mp4" autoplay muted loop playsinline></video>
+            <figcaption>CT</figcaption>
+          </figure>
+          <figure class="scan-tile us">
+            <img src="assets/case-study/bus.png" alt="Breast ultrasound case input" />
+            <figcaption>BUS</figcaption>
+          </figure>
+          <figure class="scan-tile mammo">
+            <img src="assets/case-study/mammo.png" alt="Mammography case input" />
+            <figcaption>Mammo</figcaption>
+          </figure>
+          <figure class="scan-tile mri">
+            <video src="assets/case-study/mri.mp4" autoplay muted loop playsinline></video>
+            <figcaption>MRI</figcaption>
+          </figure>
+          <figure class="scan-tile wsi">
+            <img src="assets/case-study/histo.png" alt="Histopathology case input" />
+            <figcaption>Histo</figcaption>
+          </figure>
+        </div>
+        <div class="record-lines">
+          <span></span><span></span><span></span>
+        </div>
+      </div>
+
+      <div class="router-core">
+        <div class="core-ring"></div>
+        <div class="core-pulse"></div>
+        <div class="core-label">Router</div>
+        <div class="core-sub">read τ · select A<sub>t</sub></div>
+        <span class="router-note note-read">read trajectory</span>
+        <span class="router-note note-select">select next agent</span>
+        <span class="router-note note-append">append output</span>
+      </div>
+
+      <div class="agent-lane">
+        <div class="stage-card screen-card">
+          <div class="stage-index">A1</div>
+          <div>
+            <h3>Screening Agent</h3>
+            <p>Mammo · BUS · CT</p>
+          </div>
+          <span class="status-pill">o1</span>
+        </div>
+        <div class="stage-card diag-card">
+          <div class="stage-index">A2</div>
+          <div>
+            <h3>Diagnosis Agent</h3>
+            <p>MRI · BUS · Mammo</p>
+          </div>
+          <span class="status-pill">o2</span>
+        </div>
+        <div class="stage-card tx-card">
+          <div class="stage-index">A3</div>
+          <div>
+            <h3>Treatment Agent</h3>
+            <p>WSI · biomarkers</p>
+          </div>
+          <span class="status-pill">o3</span>
+        </div>
+      </div>
+
+      <div class="care-plan trajectory-panel">
+        <div class="record-title">Clinical Trajectory τ</div>
+        <div class="traj-row traj-input"><span>t0</span><b>patient context</b></div>
+        <div class="traj-row traj-screen"><span>t1</span><b>A1: recall / BI-RADS</b></div>
+        <div class="traj-row traj-diag"><span>t2</span><b>A2: lesion report</b></div>
+        <div class="traj-row traj-tx"><span>t3</span><b>A3: care plan</b></div>
+      </div>
+
+      <span class="data-packet packet-a"></span>
+      <span class="data-packet packet-b"></span>
+      <span class="data-packet packet-c"></span>
+      <span class="data-packet packet-d"></span>
+    </div>
+
+    <div class="flow-caption">The router repeatedly reads the accumulated trajectory <b>τ</b>, selects the next stage-agent <b>A<sub>t</sub></b>, and appends each structured output until the patient-level care trajectory is complete.</div>
+  </div>
+
+  <div class="abstract-card">
+    <p>
+      Real breast oncology is not a single classification call — it is a <b>patient-level clinical trajectory</b> through <i>screening</i> → <i>diagnosis</i> → <i>treatment planning</i>, where each stage demands different modalities, reasoning style, and clinical vocabulary. We present <b>BreastGPT</b>, a unified multimodal agent system in which a <b>router</b> repeatedly reads the accumulated trajectory, selects the next stage-agent, and appends each structured output until a care plan is reached.
+    </p>
+    <p>
+      The agent is trained on <b>BreastStage</b>, a workflow-aligned instruction corpus of <b>1.86M</b> pairs curated from <b>17</b> sub-datasets across <b>5</b> imaging modalities and <b>136</b> task templates. Its held-out split, <b>BreastStage-Bench</b>, evaluates how well an agent can reason <em>across</em> the full breast cancer care continuum — not just on isolated tasks.
+    </p>
+    <p>
+      Under the hood, BreastGPT pairs a <b>dual-branch visual encoder</b> with <b>concept-preserving token compression</b> to bridge the scale gap between standard radiology and gigapixel pathology — letting the same agent see a 224×224 BUS frame and a 100k×100k whole-slide image at the same downstream cost. On BreastStage-Bench it reaches <b>75.66%</b> closed-ended accuracy and <b>89.92%</b> open-ended score, outperforming proprietary frontier agents (GPT-5.4, Claude-opus-4-6, Gemini-3.1-Pro) and medical-specific VLMs alike.
+    </p>
+  </div>
+
+  <div class="contrib-grid">
+    <div class="contrib">
+      <div class="contrib-num">1</div>
+      <h3>Stage-aware agent orchestration</h3>
+      <p>Three role-conditioned sub-agents (Screening / Diagnosis / Treatment) share one backbone and one weights checkpoint — selected by a stage-aware system prompt rather than separate task-specific heads.</p>
+    </div>
+    <div class="contrib">
+      <div class="contrib-num">2</div>
+      <h3>Modality-aware visual routing</h3>
+      <p>A resolution gating module routes each input to either the <em>Standard</em> branch (CT / MRI / BUS / Mammography) or the <em>GigaPixel</em> branch (WSI) — a tool-use pattern wired into the encoder itself.</p>
+    </div>
+    <div class="contrib">
+      <div class="contrib-num">3</div>
+      <h3>Concept-preserving compression</h3>
+      <p>A training-free concept-based token selector distills tens-of-thousands of patch features down to <b>k = 128</b> tokens — keeping the agent fast (33× speed-up) without dropping clinically salient evidence.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ============================== AGENT SYSTEM ============================== -->
+<section class="section" id="agents">
+  <div class="section-head">
+    <span class="section-tag">02 · Agent System</span>
+    <h2>Three agents, one workflow.</h2>
+    <div class="workflow-badge">筛 → 诊 → 治</div>
+    <p class="lede">BreastGPT operates as a clinical agent system. A lightweight <b>workflow router</b> reads the patient context, dispatches the case to the correct stage-specialist agent, and aggregates evidence end-to-end — mirroring how a real breast oncology team hands a patient through screening, diagnosis, and treatment planning.</p>
+  </div>
+
+  <div class="agent-flow">
+    <div class="agent-node a-screen">
+      <div class="agent-head">
+        <div class="agent-emoji">🩺</div>
+        <div class="agent-meta">
+          <div class="agent-name">Screening Agent</div>
+          <div class="agent-phase">筛 · Screening</div>
+        </div>
+      </div>
+      <ul class="agent-skills">
+        <li><b>Inputs:</b> Mammography · BUS · Chest CT</li>
+        <li><b>Goal:</b> Population-level triage, BI-RADS triage, suspicious-lesion detection</li>
+        <li><b>Tools:</b> Standard ViT encoder, lesion-grounded captioning, structured triage report</li>
+      </ul>
+    </div>
+    <div class="agent-arrow">→</div>
+    <div class="agent-node a-diag">
+      <div class="agent-head">
+        <div class="agent-emoji">🔬</div>
+        <div class="agent-meta">
+          <div class="agent-name">Diagnosis Agent</div>
+          <div class="agent-phase">诊 · Diagnosis</div>
+        </div>
+      </div>
+      <ul class="agent-skills">
+        <li><b>Inputs:</b> Multiparametric MRI (T1 / T1dyn / ADC / DWI) · BUS · Mammography</li>
+        <li><b>Goal:</b> Lesion characterization, BI-RADS scoring, malignancy probability</li>
+        <li><b>Tools:</b> Cross-modality reasoning, lesion grounding, multiparametric MRI report generation</li>
+      </ul>
+    </div>
+    <div class="agent-arrow">→</div>
+    <div class="agent-node a-tx">
+      <div class="agent-head">
+        <div class="agent-emoji">💊</div>
+        <div class="agent-meta">
+          <div class="agent-name">Treatment-Planning Agent</div>
+          <div class="agent-phase">治 · Treatment</div>
+        </div>
+      </div>
+      <ul class="agent-skills">
+        <li><b>Inputs:</b> Gigapixel WSI (H&E, IHC) · staging MRI / CT</li>
+        <li><b>Goal:</b> Molecular subtyping, biomarker profiling, therapeutic guidance</li>
+        <li><b>Tools:</b> GigaPixel encoder (CONCH + LongNet), concept-based token selector</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="orch-card">
+    <div class="orch-icon">⚙️</div>
+    <div class="orch-body">
+      <h3>Workflow Orchestrator</h3>
+      <p>All three agents share <b>one Qwen3-VL-8B backbone</b> and <b>one weights checkpoint</b>. The orchestrator emits a stage-conditioned system prompt that switches the agent's persona, vocabulary, and target output schema — no task-specific heads, no separate models. This keeps deployment cheap (one GPU, one model) while preserving stage-specific clinical reasoning.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ============================== DATASET ============================== -->
+<section class="section section-alt" id="dataset">
+  <div class="section-head">
+    <span class="section-tag">03 · Training Substrate</span>
+    <h2>Teaching the agent the full clinical workflow.</h2>
+    <p class="lede">To grow stage-specialist behavior under one backbone, the agent is trained on <b>BreastStage</b> — ≈662K unique 2D/3D images, 606K bounding-box / mask annotations, and <b>1.86M</b> instruction-following pairs. The pair distribution (<b>57.9% screening · 36.7% diagnosis · 5.4% treatment</b>) deliberately tracks the real-world prevalence of cases at each handoff point of the 筛-诊-治 pipeline.</p>
+  </div>
+
+  <div class="dataset-figures">
+    <figure class="figure-wide">
+      <img src="assets/fig2.png" alt="BreastStage construction pipeline" />
+      <figcaption><b>Figure 2 · BreastStage construction pipeline.</b> Curating diverse imaging modalities from public datasets and hospitals, then cleaning, annotating, prompting Qwen3-Max for textual data generation, and verifying with breast experts.</figcaption>
+    </figure>
+    <figure class="figure-wide data-flow-figure">
+      <img src="assets/fig6.png" alt="BreastStage stage, modality, and task-category distribution" />
+      <figcaption><b>Figure 6 · Stage-modality-task distribution.</b> BreastStage is organized as a workflow corpus rather than a loose task pool, preserving how screening, diagnosis, and treatment cases flow through modalities and clinical task categories.</figcaption>
+    </figure>
+  </div>
+
+  <div class="modality-row">
+    <div class="modality">
+      <div class="modality-icon">🩺</div>
+      <div class="modality-name">Screening Skills</div>
+      <div class="modality-desc">Basic imaging signs · modality-specific metrics · clinical risk assessment · decision & follow-up — ≈51 task templates feeding the Screening Agent.</div>
+    </div>
+    <div class="modality">
+      <div class="modality-icon">🔬</div>
+      <div class="modality-name">Diagnosis Skills</div>
+      <div class="modality-desc">Lesion characterization · advanced findings · clinical classification · therapeutic guidance — ≈67 task templates feeding the Diagnosis Agent.</div>
+    </div>
+    <div class="modality">
+      <div class="modality-icon">💊</div>
+      <div class="modality-name">Treatment Skills</div>
+      <div class="modality-desc">Biomarker profiling · pathological grading · molecular subtyping · therapeutic planning — ≈18 task templates feeding the Treatment Agent.</div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================== METHOD ============================== -->
+<section class="section" id="method">
+  <div class="section-head">
+    <span class="section-tag">04 · Agent Internals</span>
+    <h2>Inside the agent: perception, routing, compression.</h2>
+    <p class="lede">Each sub-agent sees the world through a shared dual-branch perception stack. A modality-aware <b>resolution gate</b> works like a built-in tool router: standard radiology flows into a ViT <em>Standard Branch</em>, gigapixel WSIs into a specialized <em>GigaPixel Branch</em> (frozen CONCHv1.5 → trainable LongNet → universal concept-based token selector → LLM).</p>
+  </div>
+
+  <figure class="figure-wide">
+    <img src="assets/fig3.png" alt="BreastGPT architecture and performance" />
+    <figcaption><b>Figure 3 · (a)</b> Architecture of BreastGPT. <b>(b)</b> Performance comparison: BreastGPT demonstrates superior reasoning against SOTA MLLMs on both closed-ended and open-ended clinical QA tasks across all five modalities and three clinical stages.</figcaption>
+  </figure>
+
+  <div class="method-grid">
+    <div class="method-card">
+      <h3><span class="dot dot-pink"></span>Stage-Aware Role Prompting</h3>
+      <p>The orchestrator emits one of three system prompts (筛 / 诊 / 治) that switch the agent's clinical persona — its vocabulary, reasoning chain, and target output schema — without any task-specific head or LoRA swap.</p>
+    </div>
+    <div class="method-card">
+      <h3><span class="dot dot-rose"></span>Modality-Aware Visual Router</h3>
+      <p>A resolution gate inspects every image and dispatches it to either the <b>Standard Branch</b> (Qwen3-VL ViT, for CT / MRI / BUS / Mammography) or the <b>GigaPixel Branch</b> (CONCHv1.5 + LongNet, for WSIs at 20×). Functionally, it's a tool router baked into perception.</p>
+    </div>
+    <div class="method-card">
+      <h3><span class="dot dot-purple"></span>Concept-Based Token Selector</h3>
+      <p>A training-free coverage maximizer distills ViT or WSI features into exactly <b>k = 128</b> tokens, jointly maximizing <i>text–vision</i> coverage (query relevance) and <i>vision–vision</i> coverage (visual representativeness) — the agent's working memory under a fixed budget.</p>
+    </div>
+    <div class="method-card">
+      <h3><span class="dot dot-amber"></span>Two-Stage Capability Bootstrap</h3>
+      <p>Stage 1 warms up the perception front-end with the LLM frozen — aligning ViT and CONCH+LongNet with the agent's token space. Stage 2 fine-tunes end-to-end across every modality and every task format so the three sub-agents emerge from one training run.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ============================== RESULTS ============================== -->
+<section class="section section-alt" id="results">
+  <div class="section-head">
+    <span class="section-tag">05 · Evaluation</span>
+    <h2>The agent wins at every stage of the workflow.</h2>
+    <p class="lede">On BreastStage-Bench — covering closed-ended VQA, open-ended VQA, lesion-grounded captioning, structured report generation, and visual grounding — the BreastGPT agent beats proprietary frontier agents (GPT-5.4, Claude-opus-4-6, Gemini-3.1-Pro), open-source 7–8B VLMs, and medical-specific VLMs on <em>every</em> clinical stage and task format.</p>
+  </div>
+
+  <div class="result-headline">
+    <div class="rh-card">
+      <div class="rh-label">Closed-ended VQA (accuracy)</div>
+      <div class="rh-bar">
+        <div class="rh-row"><span class="rh-name">BreastGPT (cluster)</span><div class="rh-track"><div class="rh-fill rh-ours" style="width: 89%"></div></div><span class="rh-val">75.66</span></div>
+        <div class="rh-row"><span class="rh-name">GPT-5.4</span><div class="rh-track"><div class="rh-fill" style="width: 63.8%"></div></div><span class="rh-val">54.00</span></div>
+        <div class="rh-row"><span class="rh-name">InternVL3.5</span><div class="rh-track"><div class="rh-fill" style="width: 64.1%"></div></div><span class="rh-val">53.64</span></div>
+        <div class="rh-row"><span class="rh-name">Gemini-3.1-Pro</span><div class="rh-track"><div class="rh-fill" style="width: 60.6%"></div></div><span class="rh-val">51.32</span></div>
+        <div class="rh-row"><span class="rh-name">Qwen3-VL-8B</span><div class="rh-track"><div class="rh-fill" style="width: 56.6%"></div></div><span class="rh-val">47.93</span></div>
+      </div>
+    </div>
+    <div class="rh-card">
+      <div class="rh-label">Open-ended VQA (normalized score)</div>
+      <div class="rh-bar">
+        <div class="rh-row"><span class="rh-name">BreastGPT (cluster)</span><div class="rh-track"><div class="rh-fill rh-ours" style="width: 93%"></div></div><span class="rh-val">89.92</span></div>
+        <div class="rh-row"><span class="rh-name">BreastGPT (learn)</span><div class="rh-track"><div class="rh-fill rh-ours2" style="width: 88%"></div></div><span class="rh-val">85.95</span></div>
+        <div class="rh-row"><span class="rh-name">GPT-5.4</span><div class="rh-track"><div class="rh-fill" style="width: 56%"></div></div><span class="rh-val">53.58</span></div>
+        <div class="rh-row"><span class="rh-name">InternVL3.5</span><div class="rh-track"><div class="rh-fill" style="width: 56%"></div></div><span class="rh-val">53.64</span></div>
+        <div class="rh-row"><span class="rh-name">Qwen3-VL-8B</span><div class="rh-track"><div class="rh-fill" style="width: 47%"></div></div><span class="rh-val">44.89</span></div>
+      </div>
+    </div>
+  </div>
+
+  <h3 class="subhead">Table 1 · VQA performance on BreastStage-Bench</h3>
+  <div class="table-wrap">
+    <table class="result-table">
+      <thead>
+        <tr>
+          <th rowspan="2">Model</th>
+          <th rowspan="2">#P</th>
+          <th colspan="3">Screening</th>
+          <th colspan="3">Diagnosis</th>
+          <th colspan="2">Treatment</th>
+          <th rowspan="2">Closed Avg</th>
+          <th rowspan="2">Open Avg</th>
+        </tr>
+        <tr>
+          <th>BUS</th><th>CT</th><th>Mam</th>
+          <th>BUS</th><th>Mam</th><th>MRI</th>
+          <th>MRI</th><th>His</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr class="group"><td colspan="12">Proprietary Models</td></tr>
+        <tr><td>GPT-5.4</td><td>—</td><td>64.89</td><td>78.55</td><td>68.51</td><td>53.46</td><td>53.50</td><td>38.10</td><td>32.28</td><td>—</td><td><b>54.00</b></td><td>53.58</td></tr>
+        <tr><td>Claude-opus-4-6</td><td>—</td><td>50.21</td><td>72.00</td><td>39.57</td><td>38.83</td><td>7.66</td><td>45.10</td><td>41.27</td><td>25.94</td><td>41.23</td><td>42.97</td></tr>
+        <tr><td>Gemini-3.1-Pro</td><td>—</td><td>68.09</td><td>73.33</td><td>50.21</td><td>47.14</td><td>23.87</td><td>43.88</td><td>44.44</td><td>46.53</td><td>51.32</td><td>46.16</td></tr>
+        <tr class="group"><td colspan="12">Open-Source Models</td></tr>
+        <tr><td>Qwen2.5-VL</td><td>7B</td><td>49.15</td><td>79.27</td><td>44.47</td><td>44.76</td><td>34.31</td><td>14.41</td><td>46.85</td><td>37.30</td><td>44.24</td><td>46.55</td></tr>
+        <tr><td>Qwen3-VL</td><td>8B</td><td>57.87</td><td>78.55</td><td>39.68</td><td>51.43</td><td>48.14</td><td>25.83</td><td>47.90</td><td>34.92</td><td>47.93</td><td>44.89</td></tr>
+        <tr><td>InternVL3.5</td><td>8B</td><td>51.91</td><td>77.70</td><td>35.85</td><td>34.76</td><td>16.22</td><td>52.27</td><td>44.44</td><td>52.98</td><td>45.41</td><td>53.64</td></tr>
+        <tr class="group"><td colspan="12">Medical-Specific Models</td></tr>
+        <tr><td>Lingshu</td><td>7B</td><td>58.94</td><td>78.55</td><td>39.89</td><td>54.29</td><td>58.24</td><td>8.56</td><td>45.28</td><td>51.52</td><td>50.44</td><td>50.26</td></tr>
+        <tr><td>HuatuoGPT-V</td><td>7B</td><td>45.74</td><td>71.39</td><td>43.09</td><td>39.05</td><td>35.11</td><td>9.61</td><td>47.73</td><td>15.24</td><td>45.04</td><td>51.71</td></tr>
+        <tr class="ours"><td><b>BreastGPT (cluster)</b></td><td>8B</td><td>86.81</td><td>77.21</td><td>75.00</td><td>82.86</td><td>77.13</td><td>68.32</td><td>61.11</td><td>71.38</td><td><b>75.66</b></td><td><b>89.92</b></td></tr>
+        <tr class="ours"><td><b>BreastGPT (learn)</b></td><td>8B</td><td>84.47</td><td>71.03</td><td>68.51</td><td>75.71</td><td>78.46</td><td>55.26</td><td>73.95</td><td>71.25</td><td>70.64</td><td>85.95</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p class="table-note">BUS = Breast Ultrasound · CT = Computed Tomography · Mam = Mammography · His = Histopathology. Best results in bold. BreastGPT rows highlighted.</p>
+
+  <h3 class="subhead">Ablations · Token budget & inference cost</h3>
+  <div class="ablation-row">
+    <figure class="ablation-fig">
+      <img src="assets/fig5.png" alt="Visual token budget sweep" />
+      <figcaption><b>Visual token budget sweep.</b> Accuracy, caption/report weighted score, and ground-caption IoU as we sweep <i>k</i> ∈ {1, 8, 16, 32, 64, 128, 256, 512}. We set <i>k</i> = 128 as the unified operating point — sitting on the saturation plateau across all task families.</figcaption>
+    </figure>
+    <figure class="ablation-fig">
+      <img src="assets/fig4.png" alt="GPU latency breakdown" />
+      <figcaption><b>Inference latency on WSIs.</b> At <i>k</i> = 128, total latency is 200.6 ms — <b>33× faster</b> than feeding all 5,987 patch tokens to the LLM directly, while improving task quality. Peak GPU memory: 17.95 GB → 16.97 GB.</figcaption>
+    </figure>
+  </div>
+</section>
+
+<!-- ============================== GALLERY ============================== -->
+<section class="section" id="gallery">
+  <div class="section-head">
+    <span class="section-tag">06 · Case Studies</span>
+    <h2>Representative clinical reasoning cases.</h2>
+    <p class="lede">BreastGPT handles grounded lesion description, structured radiology reporting, and pathology-level interpretation across the screening, diagnosis, and treatment-planning trajectory.</p>
+  </div>
+
+  <div class="gallery">
+    <a class="gal-card" href="../my-paper/inputs/example/sampled_BUS-SWIFT_RESIZED_Stage_GroundCaption_Test_DownSample.json" target="_blank">
+      <div class="gal-media"><img src="assets/case-study/example-bus-ground.png" alt="Breast ultrasound grounding-caption sample" /></div>
+      <div class="gal-tag tag-screen">BUS · Grounded Caption</div>
+      <h4>BI-RADS 4A ultrasound finding</h4>
+      <p>Grounds a suspicious ultrasound finding with a 2D box, describes morphology and microcalcifications, and recommends recall for biopsy or further evaluation.</p>
+    </a>
+    <a class="gal-card" href="../my-paper/inputs/example/sampled_MRI-SWIFT_RESIZED_Stage_JJ_Report_Test.json" target="_blank">
+      <div class="gal-media"><video src="assets/case-study/example-mri-report.mp4" autoplay muted loop playsinline></video></div>
+      <div class="gal-tag tag-diag">MRI · Structured Report</div>
+      <h4>BI-RADS 6 MRI report</h4>
+      <p>Generates a structured MRI report covering lesion size, enhancement kinetics, diffusion restriction, BI-RADS assessment, and management recommendation.</p>
+    </a>
+    <a class="gal-card" href="../my-paper/inputs/example/sampled_Histopathology-SWIFT_RESIZED_Slide_Caption_Test.json" target="_blank">
+      <div class="gal-media"><img src="assets/case-study/example-histo-report.png" alt="Histopathology slide-report sample" /></div>
+      <div class="gal-tag tag-tx">Histo · Pathology Report</div>
+      <h4>Infiltrating ductal carcinoma</h4>
+      <p>Interprets histopathology tiles to summarize carcinoma subtype, tumor morphology, surgical margins, and lymph-node involvement.</p>
+    </a>
+  </div>
+</section>
+
+<!-- ============================== BIBTEX ============================== -->
+<section class="section section-alt" id="bibtex">
+  <div class="section-head">
+    <span class="section-tag">06 · Citation</span>
+    <h2>BibTeX</h2>
+  </div>
+  <pre class="bibtex"><code>@misc{breastgpt2026,
+  title     = {BreastGPT: A Multimodal Large Language Model for the Full Spectrum of Breast Cancer Clinical Routine},
+  author    = {Anonymous Author(s)},
+  year      = {2026},
+  note      = {Manuscript in preparation}
+}</code></pre>
+</section>
+
+<!-- ============================== FOOTER ============================== -->
+<footer class="footer">
+  <div class="footer-inner">
+    <div class="footer-left">
+      <div class="brand">
+        <span class="brand-mark">🎀</span>
+        <span class="brand-name">BreastGPT</span>
+      </div>
+      <p class="muted">A unified MLLM for screening, diagnosis, and treatment planning in breast cancer care.</p>
+    </div>
+    <div class="footer-right">
+      <a href="my-paper/neurips_2026.pdf">Paper</a>
+      <a href="https://anonymous.4open.science/r/BreastGPT" target="_blank">Code</a>
+      <a href="https://anonymous.4open.science/r/BreastGPT" target="_blank">Dataset</a>
+      <a href="#top">Back to top ↑</a>
+    </div>
+  </div>
+  <div class="footer-bottom">
+    <span>© 2026 BreastGPT Authors.</span>
+    <span class="muted">Page template inspired by Academic Project Pages · built with vanilla HTML/CSS.</span>
+  </div>
+</footer>
+
+<script>
+  // Smooth scroll for nav links
+  document.querySelectorAll('a[href^="#"]').forEach(a => {
+    a.addEventListener('click', e => {
+      const id = a.getAttribute('href');
+      if (id.length > 1) {
+        const el = document.querySelector(id);
+        if (el) { e.preventDefault(); el.scrollIntoView({behavior: 'smooth', block: 'start'}); }
+      }
+    });
+  });
+
+  // Reveal on scroll
+  const io = new IntersectionObserver((entries) => {
+    entries.forEach(en => { if (en.isIntersecting) en.target.classList.add('in'); });
+  }, {threshold: 0.08});
+  document.querySelectorAll('.section, .stat, .contrib, .method-card, .modality, .gal-card, .rh-card').forEach(el => {
+    el.classList.add('reveal'); io.observe(el);
+  });
+</script>
+
+</body>
+</html>
