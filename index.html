@@ -208,31 +208,25 @@
 
   <div class="abstract-card">
     <p>
-      Real breast oncology is not a single classification call — it is a <b>patient-level clinical trajectory</b> through <i>screening</i> → <i>diagnosis</i> → <i>treatment planning</i>, where each stage demands different modalities, reasoning style, and clinical vocabulary. We present <b>BreastGPT</b>, a unified multimodal agent system in which a <b>router</b> repeatedly reads the accumulated trajectory, selects the next stage-agent, and appends each structured output until a care plan is reached.
-    </p>
-    <p>
-      The agent is trained on <b>BreastStage</b>, a workflow-aligned instruction corpus of <b>1.86M</b> pairs curated from <b>17</b> sub-datasets across <b>5</b> imaging modalities and <b>136</b> task templates. Its held-out split, <b>BreastStage-Bench</b>, evaluates how well an agent can reason <em>across</em> the full breast cancer care continuum — not just on isolated tasks.
-    </p>
-    <p>
-      Under the hood, BreastGPT pairs a <b>dual-branch visual encoder</b> with <b>concept-preserving token compression</b> to bridge the scale gap between standard radiology and gigapixel pathology — letting the same agent see a 224×224 BUS frame and a 100k×100k whole-slide image at the same downstream cost. On BreastStage-Bench it reaches <b>75.66%</b> closed-ended accuracy and <b>89.92%</b> open-ended score, outperforming proprietary frontier agents (GPT-5.4, Claude-opus-4-6, Gemini-3.1-Pro) and medical-specific VLMs alike.
+      <b>BreastGPT</b> treats breast oncology as a patient-level trajectory rather than a single image task. A shared multimodal backbone is steered by a router that moves through <i>screening</i>, <i>diagnosis</i>, and <i>treatment planning</i>, appending each stage output into one evolving clinical record.
     </p>
   </div>
 
   <div class="contrib-grid">
     <div class="contrib">
       <div class="contrib-num">1</div>
-      <h3>Stage-aware agent orchestration</h3>
-      <p>Three role-conditioned sub-agents (Screening / Diagnosis / Treatment) share one backbone and one weights checkpoint — selected by a stage-aware system prompt rather than separate task-specific heads.</p>
+      <h3>One clinical trajectory</h3>
+      <p>A router decides which stage-agent should act next and preserves the accumulated patient context.</p>
     </div>
     <div class="contrib">
       <div class="contrib-num">2</div>
-      <h3>Modality-aware visual routing</h3>
-      <p>A resolution gating module routes each input to either the <em>Standard</em> branch (CT / MRI / BUS / Mammography) or the <em>GigaPixel</em> branch (WSI) — a tool-use pattern wired into the encoder itself.</p>
+      <h3>One workflow corpus</h3>
+      <p>BreastStage aligns 1.86M instruction pairs with the real screening-to-treatment pathway.</p>
     </div>
     <div class="contrib">
       <div class="contrib-num">3</div>
-      <h3>Concept-preserving compression</h3>
-      <p>A training-free concept-based token selector distills tens-of-thousands of patch features down to <b>k = 128</b> tokens — keeping the agent fast (33× speed-up) without dropping clinically salient evidence.</p>
+      <h3>One deployable model</h3>
+      <p>A shared backbone handles standard radiology and gigapixel pathology without stage-specific models.</p>
     </div>
   </div>
 </section>
@@ -243,7 +237,7 @@
     <span class="section-tag">02 · Agent System</span>
     <h2>Three agents, one workflow.</h2>
     <div class="workflow-badge">筛 → 诊 → 治</div>
-    <p class="lede">BreastGPT operates as a clinical agent system. A lightweight <b>workflow router</b> reads the patient context, dispatches the case to the correct stage-specialist agent, and aggregates evidence end-to-end — mirroring how a real breast oncology team hands a patient through screening, diagnosis, and treatment planning.</p>
+    <p class="lede">BreastGPT uses one router to build a patient-level trajectory. At each step, the router selects the stage-agent whose clinical role matches the current evidence state.</p>
   </div>
 
   <div class="agent-flow">
@@ -256,9 +250,8 @@
         </div>
       </div>
       <ul class="agent-skills">
-        <li><b>Inputs:</b> Mammography · BUS · Chest CT</li>
-        <li><b>Goal:</b> Population-level triage, BI-RADS triage, suspicious-lesion detection</li>
-        <li><b>Tools:</b> Standard ViT encoder, lesion-grounded captioning, structured triage report</li>
+        <li><b>Role:</b> Early triage from population-screening evidence</li>
+        <li><b>Writes to τ:</b> Recall decision, BI-RADS risk, suspicious findings</li>
       </ul>
     </div>
     <div class="agent-arrow">→</div>
@@ -271,9 +264,8 @@
         </div>
       </div>
       <ul class="agent-skills">
-        <li><b>Inputs:</b> Multiparametric MRI (T1 / T1dyn / ADC / DWI) · BUS · Mammography</li>
-        <li><b>Goal:</b> Lesion characterization, BI-RADS scoring, malignancy probability</li>
-        <li><b>Tools:</b> Cross-modality reasoning, lesion grounding, multiparametric MRI report generation</li>
+        <li><b>Role:</b> Characterize lesions and resolve diagnostic uncertainty</li>
+        <li><b>Writes to τ:</b> Radiology report, malignancy rationale, next-step recommendation</li>
       </ul>
     </div>
     <div class="agent-arrow">→</div>
@@ -286,9 +278,8 @@
         </div>
       </div>
       <ul class="agent-skills">
-        <li><b>Inputs:</b> Gigapixel WSI (H&E, IHC) · staging MRI / CT</li>
-        <li><b>Goal:</b> Molecular subtyping, biomarker profiling, therapeutic guidance</li>
-        <li><b>Tools:</b> GigaPixel encoder (CONCH + LongNet), concept-based token selector</li>
+        <li><b>Role:</b> Translate pathology and staging evidence into care intent</li>
+        <li><b>Writes to τ:</b> Subtype evidence, biomarker interpretation, treatment plan</li>
       </ul>
     </div>
   </div>
@@ -297,7 +288,7 @@
     <div class="orch-icon">⚙️</div>
     <div class="orch-body">
       <h3>Workflow Orchestrator</h3>
-      <p>All three agents share <b>one Qwen3-VL-8B backbone</b> and <b>one weights checkpoint</b>. The orchestrator emits a stage-conditioned system prompt that switches the agent's persona, vocabulary, and target output schema — no task-specific heads, no separate models. This keeps deployment cheap (one GPU, one model) while preserving stage-specific clinical reasoning.</p>
+      <p>All three agents share <b>one Qwen3-VL-8B backbone</b> and <b>one weights checkpoint</b>. The orchestrator changes the stage-conditioned persona and output schema, then appends the result back into the same patient trajectory.</p>
     </div>
   </div>
 </section>
@@ -307,36 +298,18 @@
   <div class="section-head">
     <span class="section-tag">03 · Training Substrate</span>
     <h2>Teaching the agent the full clinical workflow.</h2>
-    <p class="lede">To grow stage-specialist behavior under one backbone, the agent is trained on <b>BreastStage</b> — ≈662K unique 2D/3D images, 606K bounding-box / mask annotations, and <b>1.86M</b> instruction-following pairs. The pair distribution (<b>57.9% screening · 36.7% diagnosis · 5.4% treatment</b>) deliberately tracks the real-world prevalence of cases at each handoff point of the 筛-诊-治 pipeline.</p>
+    <p class="lede"><b>BreastStage</b> is a workflow-aligned corpus with ≈662K images, 606K boxes/masks, and <b>1.86M</b> instruction-following pairs across screening, diagnosis, and treatment planning.</p>
   </div>
 
   <div class="dataset-figures">
     <figure class="figure-wide">
       <img src="assets/fig2.png" alt="BreastStage construction pipeline" />
-      <figcaption><b>Figure 2 · BreastStage construction pipeline.</b> Curating diverse imaging modalities from public datasets and hospitals, then cleaning, annotating, prompting Qwen3-Max for textual data generation, and verifying with breast experts.</figcaption>
+      <figcaption><b>Figure 2 · BreastStage construction pipeline.</b> From multimodal clinical data to expert-verified instruction pairs.</figcaption>
     </figure>
     <figure class="figure-wide data-flow-figure">
       <img src="assets/fig6.png" alt="BreastStage stage, modality, and task-category distribution" />
-      <figcaption><b>Figure 6 · Stage-modality-task distribution.</b> BreastStage is organized as a workflow corpus rather than a loose task pool, preserving how screening, diagnosis, and treatment cases flow through modalities and clinical task categories.</figcaption>
+      <figcaption><b>Figure 6 · Stage-modality-task distribution.</b> The corpus preserves the screening-diagnosis-treatment structure.</figcaption>
     </figure>
-  </div>
-
-  <div class="modality-row">
-    <div class="modality">
-      <div class="modality-icon">🩺</div>
-      <div class="modality-name">Screening Skills</div>
-      <div class="modality-desc">Basic imaging signs · modality-specific metrics · clinical risk assessment · decision & follow-up — ≈51 task templates feeding the Screening Agent.</div>
-    </div>
-    <div class="modality">
-      <div class="modality-icon">🔬</div>
-      <div class="modality-name">Diagnosis Skills</div>
-      <div class="modality-desc">Lesion characterization · advanced findings · clinical classification · therapeutic guidance — ≈67 task templates feeding the Diagnosis Agent.</div>
-    </div>
-    <div class="modality">
-      <div class="modality-icon">💊</div>
-      <div class="modality-name">Treatment Skills</div>
-      <div class="modality-desc">Biomarker profiling · pathological grading · molecular subtyping · therapeutic planning — ≈18 task templates feeding the Treatment Agent.</div>
-    </div>
   </div>
 </section>
 
@@ -345,30 +318,30 @@
   <div class="section-head">
     <span class="section-tag">04 · Agent Internals</span>
     <h2>Inside the agent: perception, routing, compression.</h2>
-    <p class="lede">Each sub-agent sees the world through a shared dual-branch perception stack. A modality-aware <b>resolution gate</b> works like a built-in tool router: standard radiology flows into a ViT <em>Standard Branch</em>, gigapixel WSIs into a specialized <em>GigaPixel Branch</em> (frozen CONCHv1.5 → trainable LongNet → universal concept-based token selector → LLM).</p>
+    <p class="lede">BreastGPT combines a shared multimodal backbone with stage prompts, modality-aware perception, and compact visual memory.</p>
   </div>
 
   <figure class="figure-wide">
     <img src="assets/fig3.png" alt="BreastGPT architecture and performance" />
-    <figcaption><b>Figure 3 · (a)</b> Architecture of BreastGPT. <b>(b)</b> Performance comparison: BreastGPT demonstrates superior reasoning against SOTA MLLMs on both closed-ended and open-ended clinical QA tasks across all five modalities and three clinical stages.</figcaption>
+    <figcaption><b>Figure 3 · BreastGPT architecture.</b> A unified agent stack for standard radiology, pathology, and stage-conditioned reasoning.</figcaption>
   </figure>
 
   <div class="method-grid">
     <div class="method-card">
       <h3><span class="dot dot-pink"></span>Stage-Aware Role Prompting</h3>
-      <p>The orchestrator emits one of three system prompts (筛 / 诊 / 治) that switch the agent's clinical persona — its vocabulary, reasoning chain, and target output schema — without any task-specific head or LoRA swap.</p>
+      <p>The router switches the agent's clinical role across screening, diagnosis, and treatment planning while keeping one model checkpoint.</p>
     </div>
     <div class="method-card">
       <h3><span class="dot dot-rose"></span>Modality-Aware Visual Router</h3>
-      <p>A resolution gate inspects every image and dispatches it to either the <b>Standard Branch</b> (Qwen3-VL ViT, for CT / MRI / BUS / Mammography) or the <b>GigaPixel Branch</b> (CONCHv1.5 + LongNet, for WSIs at 20×). Functionally, it's a tool router baked into perception.</p>
+      <p>Standard radiology and gigapixel pathology are routed through different visual branches before entering the same language model.</p>
     </div>
     <div class="method-card">
       <h3><span class="dot dot-purple"></span>Concept-Based Token Selector</h3>
-      <p>A training-free coverage maximizer distills ViT or WSI features into exactly <b>k = 128</b> tokens, jointly maximizing <i>text–vision</i> coverage (query relevance) and <i>vision–vision</i> coverage (visual representativeness) — the agent's working memory under a fixed budget.</p>
+      <p>Large visual inputs are compressed to <b>k = 128</b> clinically relevant tokens, making WSI reasoning practical at inference time.</p>
     </div>
     <div class="method-card">
-      <h3><span class="dot dot-amber"></span>Two-Stage Capability Bootstrap</h3>
-      <p>Stage 1 warms up the perception front-end with the LLM frozen — aligning ViT and CONCH+LongNet with the agent's token space. Stage 2 fine-tunes end-to-end across every modality and every task format so the three sub-agents emerge from one training run.</p>
+      <h3><span class="dot dot-amber"></span>Workflow Training</h3>
+      <p>A single training recipe aligns visual features first, then teaches the full workflow across modalities and clinical stages.</p>
     </div>
   </div>
 </section>
@@ -378,7 +351,7 @@
   <div class="section-head">
     <span class="section-tag">05 · Evaluation</span>
     <h2>The agent wins at every stage of the workflow.</h2>
-    <p class="lede">On BreastStage-Bench — covering closed-ended VQA, open-ended VQA, lesion-grounded captioning, structured report generation, and visual grounding — the BreastGPT agent beats proprietary frontier agents (GPT-5.4, Claude-opus-4-6, Gemini-3.1-Pro), open-source 7–8B VLMs, and medical-specific VLMs on <em>every</em> clinical stage and task format.</p>
+    <p class="lede">On BreastStage-Bench, BreastGPT outperforms proprietary frontier agents, open-source VLMs, and medical-specific VLMs across the full clinical workflow.</p>
   </div>
 
   <div class="result-headline">
@@ -446,11 +419,11 @@
   <div class="ablation-row">
     <figure class="ablation-fig">
       <img src="assets/fig5.png" alt="Visual token budget sweep" />
-      <figcaption><b>Visual token budget sweep.</b> Accuracy, caption/report weighted score, and ground-caption IoU as we sweep <i>k</i> ∈ {1, 8, 16, 32, 64, 128, 256, 512}. We set <i>k</i> = 128 as the unified operating point — sitting on the saturation plateau across all task families.</figcaption>
+      <figcaption><b>Visual token budget sweep.</b> <i>k</i> = 128 gives a compact operating point across task families.</figcaption>
     </figure>
     <figure class="ablation-fig">
       <img src="assets/fig4.png" alt="GPU latency breakdown" />
-      <figcaption><b>Inference latency on WSIs.</b> At <i>k</i> = 128, total latency is 200.6 ms — <b>33× faster</b> than feeding all 5,987 patch tokens to the LLM directly, while improving task quality. Peak GPU memory: 17.95 GB → 16.97 GB.</figcaption>
+      <figcaption><b>Inference latency on WSIs.</b> Concept-based selection delivers <b>33× faster</b> inference than direct patch-token feeding.</figcaption>
     </figure>
   </div>
 </section>
@@ -460,35 +433,35 @@
   <div class="section-head">
     <span class="section-tag">06 · Case Studies</span>
     <h2>Representative clinical reasoning cases.</h2>
-    <p class="lede">BreastGPT handles grounded lesion description, structured radiology reporting, and pathology-level interpretation across the screening, diagnosis, and treatment-planning trajectory.</p>
+    <p class="lede">Representative outputs across screening, diagnosis, and treatment planning.</p>
   </div>
 
   <div class="gallery">
-    <a class="gal-card" href="../my-paper/inputs/example/sampled_BUS-SWIFT_RESIZED_Stage_GroundCaption_Test_DownSample.json" target="_blank">
+    <article class="gal-card">
       <div class="gal-media"><img src="assets/case-study/example-bus-ground.png" alt="Breast ultrasound grounding-caption sample" /></div>
       <div class="gal-tag tag-screen">BUS · Grounded Caption</div>
       <h4>BI-RADS 4A ultrasound finding</h4>
-      <p>Grounds a suspicious ultrasound finding with a 2D box, describes morphology and microcalcifications, and recommends recall for biopsy or further evaluation.</p>
-    </a>
-    <a class="gal-card" href="../my-paper/inputs/example/sampled_MRI-SWIFT_RESIZED_Stage_JJ_Report_Test.json" target="_blank">
+      <p>Grounds the suspicious region and summarizes the key imaging finding.</p>
+    </article>
+    <article class="gal-card">
       <div class="gal-media"><video src="assets/case-study/example-mri-report.mp4" autoplay muted loop playsinline></video></div>
       <div class="gal-tag tag-diag">MRI · Structured Report</div>
       <h4>BI-RADS 6 MRI report</h4>
-      <p>Generates a structured MRI report covering lesion size, enhancement kinetics, diffusion restriction, BI-RADS assessment, and management recommendation.</p>
-    </a>
-    <a class="gal-card" href="../my-paper/inputs/example/sampled_Histopathology-SWIFT_RESIZED_Slide_Caption_Test.json" target="_blank">
+      <p>Produces a structured report from multiparametric MRI evidence.</p>
+    </article>
+    <article class="gal-card">
       <div class="gal-media"><img src="assets/case-study/example-histo-report.png" alt="Histopathology slide-report sample" /></div>
       <div class="gal-tag tag-tx">Histo · Pathology Report</div>
       <h4>Infiltrating ductal carcinoma</h4>
-      <p>Interprets histopathology tiles to summarize carcinoma subtype, tumor morphology, surgical margins, and lymph-node involvement.</p>
-    </a>
+      <p>Summarizes pathology evidence for downstream treatment planning.</p>
+    </article>
   </div>
 </section>
 
 <!-- ============================== BIBTEX ============================== -->
 <section class="section section-alt" id="bibtex">
   <div class="section-head">
-    <span class="section-tag">06 · Citation</span>
+    <span class="section-tag">07 · Citation</span>
     <h2>BibTeX</h2>
   </div>
   <pre class="bibtex"><code>@misc{breastgpt2026,
