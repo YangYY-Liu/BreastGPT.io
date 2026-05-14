@@ -113,97 +113,131 @@
     <h2 class="no-wrap-title">A clinical agent that thinks in stages.</h2>
   </div>
 
-  <!-- Animated workflow diagram -->
-  <div class="flow-anim agent-console" aria-label="BreastGPT full-workflow agent animation">
+  <!-- Animated clinical workflow diagram -->
+  <div class="flow-anim agent-console clinical-console" aria-label="BreastGPT clinical workflow animation">
     <div class="console-glow"></div>
     <div class="console-topline">
       <span class="live-dot"></span>
-      <span>Stage-aware clinical agent loop</span>
-      <span class="console-chip">one MLLM checkpoint</span>
+      <span>Patient-level clinical trajectory</span>
+      <span class="console-chip">router-controlled workflow</span>
     </div>
 
-    <div class="agent-stage">
-      <div class="patient-record">
-        <div class="record-title">Patient Case · multimodal inputs</div>
-        <div class="scan-stack">
-          <figure class="scan-tile ct">
-            <video src="assets/case-study/ct.mp4" autoplay muted loop playsinline></video>
-            <figcaption>CT</figcaption>
-          </figure>
-          <figure class="scan-tile us">
-            <img src="assets/case-study/bus.png" alt="Breast ultrasound case input" />
-            <figcaption>BUS</figcaption>
-          </figure>
-          <figure class="scan-tile mammo">
-            <img src="assets/case-study/mammo.png" alt="Mammography case input" />
-            <figcaption>Mammo</figcaption>
-          </figure>
-          <figure class="scan-tile mri">
-            <video src="assets/case-study/mri.mp4" autoplay muted loop playsinline></video>
-            <figcaption>MRI</figcaption>
-          </figure>
-          <figure class="scan-tile wsi">
-            <img src="assets/case-study/histo.png" alt="Histopathology case input" />
-            <figcaption>Histo</figcaption>
-          </figure>
+    <div class="clinical-cockpit">
+      <section class="case-console">
+        <div class="case-avatar" aria-hidden="true">
+          <img src="assets/workflow-icons/patient.png" alt="" />
         </div>
-        <div class="record-lines">
-          <span></span><span></span><span></span>
+        <div class="case-copy">
+          <div class="record-title">Patient Case</div>
+          <h3>New breast complaint</h3>
+          <p>history · symptoms · family risk</p>
         </div>
-      </div>
+        <div class="patient-dialogue">
+          <span class="agent-asks">A1 asks: symptom duration?</span>
+          <span class="patient-replies">Patient: palpable lump, family history</span>
+        </div>
+        <div class="case-evidence">
+          <figure class="evidence-tile ev-bus"><img src="assets/case-study/bus.png" alt="BUS input" /><figcaption>BUS</figcaption></figure>
+          <figure class="evidence-tile ev-mammo"><img src="assets/case-study/mammo.png" alt="Mammography input" /><figcaption>Mammo</figcaption></figure>
+          <figure class="evidence-tile ev-ct"><video src="assets/case-study/ct.mp4" autoplay muted loop playsinline></video><figcaption>CT</figcaption></figure>
+          <figure class="evidence-tile ev-mri"><video src="assets/case-study/mri.mp4" autoplay muted loop playsinline></video><figcaption>MRI</figcaption></figure>
+          <figure class="evidence-tile ev-path"><img src="assets/case-study/histo.png" alt="Pathology input" /><figcaption>Patho</figcaption></figure>
+        </div>
+      </section>
 
-      <div class="router-core">
-        <div class="core-ring"></div>
-        <div class="core-pulse"></div>
-        <div class="core-label">Router</div>
-        <div class="core-sub">read τ · select A<sub>t</sub></div>
-        <span class="router-note note-read">read trajectory</span>
-        <span class="router-note note-select">select next agent</span>
-        <span class="router-note note-append">append output</span>
-      </div>
+      <section class="router-engine">
+        <div class="router-orbit"></div>
+        <div class="router-core-v2">
+          <span class="router-kicker">Router</span>
+          <div class="router-state state-screen">
+            <strong>ask patient</strong>
+            <em>next: Screening Agent</em>
+          </div>
+          <div class="router-state state-diagnosis">
+            <strong>risk = high</strong>
+            <em>next: Diagnosis Agent</em>
+          </div>
+          <div class="router-state state-treatment">
+            <strong>malignant evidence</strong>
+            <em>next: Treatment Agent</em>
+          </div>
+        </div>
+        <div class="decision-card decision-risk">
+          <span>risk = high</span>
+          <b>diagnosis</b>
+        </div>
+        <div class="decision-card decision-malignant">
+          <span>malignant evidence</span>
+          <b>treatment</b>
+        </div>
+        <div class="followup-branch">follow-up path stays inactive</div>
+      </section>
 
-      <div class="agent-lane">
-        <div class="stage-card screen-card">
-          <div class="stage-index">A1</div>
+      <section class="agent-stack">
+        <article class="station station-screen">
+          <div class="station-avatar">
+            <img src="assets/workflow-icons/doctor-screening.png" alt="" />
+            <span>A1</span>
+          </div>
           <div>
             <h3>Screening Agent</h3>
-            <p>Mammo · BUS · CT</p>
+            <p>BUS · Mammo · CT · MRI</p>
           </div>
-          <span class="status-pill">o1</span>
+          <b>risk triage</b>
+          <div class="station-modalities">
+            <span>BUS</span><span>Mammo</span><span>CT</span><span>MRI</span>
+          </div>
+          <div class="handoff-note">writes: recall + BI-RADS risk</div>
+        </article>
+        <div class="agent-gate gate-diagnosis">
+          <span>condition</span>
+          <b>high risk</b>
+          <em>enter Diagnosis</em>
         </div>
-        <div class="stage-card diag-card">
-          <div class="stage-index">A2</div>
+        <article class="station station-diagnosis">
+          <div class="station-avatar">
+            <img src="assets/workflow-icons/doctor-diagnosis.png" alt="" />
+            <span>A2</span>
+          </div>
           <div>
             <h3>Diagnosis Agent</h3>
-            <p>MRI · BUS · Mammo</p>
+            <p>BUS · Mammo · MRI</p>
           </div>
-          <span class="status-pill">o2</span>
+          <b>lesion report</b>
+          <div class="station-modalities">
+            <span>BUS</span><span>Mammo</span><span>MRI</span>
+          </div>
+          <div class="handoff-note">reads A1 risk, writes diagnosis</div>
+        </article>
+        <div class="agent-gate gate-treatment">
+          <span>condition</span>
+          <b>malignant evidence</b>
+          <em>enter Treatment</em>
         </div>
-        <div class="stage-card tx-card">
-          <div class="stage-index">A3</div>
+        <article class="station station-treatment">
+          <div class="station-avatar">
+            <img src="assets/workflow-icons/doctor-treatment.png" alt="" />
+            <span>A3</span>
+          </div>
           <div>
             <h3>Treatment Agent</h3>
-            <p>WSI · biomarkers</p>
+            <p>MRI · Pathology</p>
           </div>
-          <span class="status-pill">o3</span>
-        </div>
-      </div>
+          <b>care plan</b>
+          <div class="station-modalities">
+            <span>MRI</span><span>Patho</span>
+          </div>
+          <div class="handoff-note">reads diagnosis, writes plan</div>
+        </article>
+      </section>
 
-      <div class="care-plan trajectory-panel">
-        <div class="record-title">Clinical Trajectory τ</div>
-        <div class="traj-row traj-input"><span>t0</span><b>patient context</b></div>
-        <div class="traj-row traj-screen"><span>t1</span><b>A1: recall / BI-RADS</b></div>
-        <div class="traj-row traj-diag"><span>t2</span><b>A2: lesion report</b></div>
-        <div class="traj-row traj-tx"><span>t3</span><b>A3: care plan</b></div>
+      <div class="trajectory-writer">
+        <span class="tau-mark">τ</span>
+        <div class="handoff-flow">A1 output → shared τ → condition gate → A2 output → shared τ → condition gate → A3 plan</div>
       </div>
-
-      <span class="data-packet packet-a"></span>
-      <span class="data-packet packet-b"></span>
-      <span class="data-packet packet-c"></span>
-      <span class="data-packet packet-d"></span>
     </div>
 
-    <div class="flow-caption">The router repeatedly reads the accumulated trajectory <b>τ</b>, selects the next stage-agent <b>A<sub>t</sub></b>, and appends each structured output until the patient-level care trajectory is complete.</div>
+    <div class="flow-caption">The router reads the evolving patient trajectory, makes escalation decisions, calls the right stage-agent, and writes each result back into <b>τ</b>.</div>
   </div>
 
   <div class="abstract-card">
