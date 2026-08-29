@@ -184,8 +184,9 @@ sup { font-size: 0.7em; }
   border-top: 2px solid rgba(185, 28, 92, 0.72);
   transform: translateY(-50%) rotate(45deg);
 }
-.authors { margin-top: 14px; font-size: 16px; color: var(--ink-2); font-weight: 500; }
-.affil { margin-top: 4px; font-size: 14px; color: var(--muted); font-style: italic; }
+.authors { max-width: 1040px; margin: 14px auto 0; font-size: 16px; line-height: 1.7; color: var(--ink-2); font-weight: 500; }
+.affil { max-width: 1100px; margin: 4px auto 0; font-size: 13px; line-height: 1.6; color: var(--muted); }
+.affil .venue { display: inline-block; margin-top: 4px; font-size: 14px; font-style: italic; }
 
 .cta-row {
   margin-top: 28px; display: flex; justify-content: center; gap: 12px; flex-wrap: wrap;
